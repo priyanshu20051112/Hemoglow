@@ -111,3 +111,14 @@ MySQL Database
 ---
 
 ## 📂 Backend Structure
+hemo-glow/
+│
+├── controller/        # REST Controllers
+├── service/           # Business Logic Layer
+├── repository/        # JPA Repository Interfaces
+├── entity/            # Database Entities / Models
+├── dto/               # Data Transfer Objects
+├── config/            # Security & JWT Configuration
+├── exception/         # Custom Exception Handling
+└── resources/
+    └── application.properties
