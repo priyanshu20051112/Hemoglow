@@ -112,7 +112,6 @@ MySQL Database
 
 ## 📂 Backend Structure
 hemo-glow/
-│
 ├── controller/        # REST Controllers
 ├── service/           # Business Logic Layer
 ├── repository/        # JPA Repository Interfaces
