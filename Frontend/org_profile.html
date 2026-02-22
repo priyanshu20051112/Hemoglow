@@ -1,0 +1,236 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organization Profile - HemoGlow</title>
+  <style>
+    :root {
+      --primary: #B22222;
+      --dark: #1e293b;
+      --muted: #64748b;
+      --bg: #fff5f5;
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      background-image: url('https://i.pinimg.com/736x/ff/f4/f2/fff4f20aa2d0773d0b712bac8eb99ec6.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center;
+      background-color: var(--bg);
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 30px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    header .logo { height: 40px; }
+    header h1 { margin:0; font-size: 22px; }
+    .profile {
+      position: absolute;
+      top: 15px;
+      right: 30px;
+    }
+    .profile-btn {
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .profile-btn:hover { background: #ffecec; }
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      min-width: 160px;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 10px 15px;
+      color: var(--dark);
+      text-decoration: none;
+    }
+    .dropdown a:hover { background: #ffecec; color: var(--primary); }
+    .show { display: block; }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 { color: var(--primary); margin-bottom: 15px; text-align: center; }
+    .profile-section {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 20px;
+    }
+    .profile-section p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .counter-table {
+      width: 100%;
+      margin-bottom: 30px;
+      border-collapse: collapse;
+    }
+    .counter-table th, .counter-table td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+      font-size: 16px;
+    }
+    .counter-table th {
+      background: #ffecec;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+    <h1>HemoGlow – Organization Profile</h1>
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="org_home.html">Home</a>
+        <a href="manage_requests.html">Manage Requests</a>
+        <a href="inventory.html">Blood Inventory</a>
+        <a href="org_events.html">Events</a>
+        <a href="login_organisation.html" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+  <div class="container">
+    <h2>Organization Profile</h2>
+    <div class="profile-section">
+      <p><strong>Name:</strong> <span id="orgName"></span></p>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <p><strong>Phone:</strong> <span id="phone"></span></p>
+      <p><strong>Address:</strong> <span id="address"></span></p>
+    </div>
+    <h2>Events Conducted</h2>
+    <table class="counter-table" id="eventsTable">
+      <tr><th>Total Events</th></tr>
+      <tr><td id="eventsCount">0</td></tr>
+    </table>
+    <h2>Requests Accepted/Rejected</h2>
+    <table class="counter-table" id="requestsTable">
+      <tr><th>Total Accepted/Rejected Requests</th></tr>
+      <tr><td id="requestsCount">0</td></tr>
+    </table>
+  </div>
+  <script>
+    function toggleDropdown() {
+      document.getElementById("dropdownMenu").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-btn')) {
+        document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+      }
+    }
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userid');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      localStorage.removeItem('orgProfile');
+      window.location.href = 'login_organisation.html';
+    }
+    // Profile details
+    const orgNameSpan = document.getElementById("orgName");
+    const emailSpan = document.getElementById("email");
+    const phoneSpan = document.getElementById("phone");
+    const addressSpan = document.getElementById("address");
+    async function loadProfile() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      let loaded = false;
+      if (token && userId) {
+        try {
+          const res = await fetch(`http://localhost:8080/api/user/dashboard/${userId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            const obj = await res.json();
+            if (orgNameSpan) orgNameSpan.textContent = obj.username || obj.name || '';
+            if (emailSpan) emailSpan.textContent = obj.email || '';
+            if (phoneSpan) phoneSpan.textContent = obj.phone || obj.contactNumber || '';
+            if (addressSpan) addressSpan.textContent = obj.address || '';
+            loaded = true;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch org profile from users table', e);
+        }
+      }
+      if (!loaded) {
+        const savedProfile = JSON.parse(localStorage.getItem("orgProfile")) || {};
+        if (savedProfile.orgName) orgNameSpan.textContent = savedProfile.orgName;
+        if (savedProfile.email) emailSpan.textContent = savedProfile.email;
+        if (savedProfile.phone) phoneSpan.textContent = savedProfile.phone;
+        if (savedProfile.address) addressSpan.textContent = savedProfile.address;
+      }
+    }
+    loadProfile();
+    // Events counter
+    async function loadEventsCount() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      const eventsCountTd = document.getElementById("eventsCount");
+      if (!token || !userId) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${userId}/events`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const events = await res.json();
+          eventsCountTd.textContent = Array.isArray(events) ? events.length : 0;
+        }
+      } catch (e) {
+        eventsCountTd.textContent = "0";
+        console.warn('Failed to load events', e);
+      }
+    }
+    loadEventsCount();
+    // Requests counter
+    async function loadRequestsCount() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      const requestsCountTd = document.getElementById("requestsCount");
+      if (!token || !userId) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${userId}/requests`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const requests = await res.json();
+          // Only count accepted/rejected
+          const filtered = Array.isArray(requests) ? requests.filter(r => r.status && r.status !== 'PENDING') : [];
+          requestsCountTd.textContent = filtered.length;
+        }
+      } catch (e) {
+        requestsCountTd.textContent = "0";
+        console.warn('Failed to load requests', e);
+      }
+    }
+    loadRequestsCount();
+  </script>
+</body>
+</html>

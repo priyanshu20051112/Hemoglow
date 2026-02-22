@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blood Requests</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #ffe6e6;
+        color: #333;
+      }
+      header {
+        background: #b22222;
+        color: white;
+        padding: 20px 40px;
+        text-align: center;
+        font-size: 25px;
+        font-weight: bold;
+        position: relative;
+      }
+      .profile {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+      }
+      .profile-btn {
+        background: white;
+        color: #b22222;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        margin-top: 8px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        min-width: 160px;
+        z-index: 100;
+      }
+      .dropdown a {
+        display: block;
+        padding: 10px 15px;
+        color: #333;
+        text-decoration: none;
+      }
+      .dropdown a:hover {
+        background: #ffecec;
+        color: #b22222;
+      }
+      .show {
+        display: block;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 20px;
+      }
+      .card {
+        background: #fff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        color: #b22222;
+        margin-bottom: 15px;
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 15px;
+      }
+      button {
+        background: #b22222;
+        color: white;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+      button:hover {
+        background: #8b1a1a;
+        transform: scale(1.02);
+      }
+      .request-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-top: 10px;
+      }
+      .request {
+        padding: 15px;
+        border-radius: 10px;
+        background: #ffecec;
+        border: 1px solid #f5c2c2;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+      .actions {
+        margin-top: 10px;
+      }
+      .actions button {
+        margin-right: 10px;
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+      @media (max-width: 768px) {
+        .container {
+          grid-template-columns: 1fr;
+        }
+      }
+      .logo {
+        height: 50px;
+        margin-right: 15px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <img src="logo.jpg" alt="HemoGlow Logo" class="logo" />
+        <span class="header-title">HemoGlow – Requests</span>
+      </div>
+      <div class="profile">
+        <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+        <div id="dropdownMenu" class="dropdown">
+          <a href="home.html">Home</a>
+          <a href="profile.html">Profile</a>
+          <a href="donate.html">Donation</a>
+          <a href="request.html">Requests</a>
+          <a href="event.html">Events</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="card">
+        <h2>Request Blood</h2>
+        <form id="requestForm">
+          <input type="text" id="patient" placeholder="Patient Name" required />
+          <select id="blood" required>
+            <option value="" disabled selected>Blood Group</option>
+            <option>A+</option>
+            <option>A-</option>
+            <option>B+</option>
+            <option>B-</option>
+            <option>O+</option>
+            <option>O-</option>
+            <option>AB+</option>
+            <option>AB-</option>
+          </select>
+          <input
+            type="text"
+            id="hospital"
+            placeholder="Hospital Name"
+            required
+          />
+          <input
+            type="tel"
+            id="phone"
+            placeholder="Contact Number"
+            pattern="[0-9]{10}"
+            required
+          />
+          <button type="submit">Submit Request</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Recent Requests</h2>
+        <div class="request-list" id="requestList">Loading...</div>
+      </div>
+    </div>
+
+    <script>
+      function toggleDropdown() {
+        document.getElementById("dropdownMenu").classList.toggle("show");
+      }
+      window.onclick = function (event) {
+        if (!event.target.closest(".profile")) {
+          document
+            .querySelectorAll(".dropdown")
+            .forEach((d) => d.classList.remove("show"));
+        }
+      };
+
+      const requestForm = document.getElementById("requestForm");
+      const requestList = document.getElementById("requestList");
+      const userId = localStorage.getItem("userid");
+      const username = localStorage.getItem("username");
+      const password = localStorage.getItem("password");
+
+      if (!userId) {
+        alert("Please login first");
+        window.location.href = "home.html";
+      }
+
+      async function loadRequests() {
+        try {
+          const res = await fetch(
+            `http://localhost:8080/api/user/${userId}/requests`,
+            {
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem("token"),
+              },
+            }
+          );
+          const requests = await res.json();
+          renderRequests(requests);
+        } catch (err) {
+          console.error("Error fetching requests:", err);
+          requestList.innerHTML = "<p>Failed to load requests.</p>";
+        }
+      }
+
+      function renderRequests(requests) {
+        requestList.innerHTML = "";
+        if (requests.length === 0) {
+          requestList.innerHTML =
+            "<p style='color: gray;'>No requests yet.</p>";
+          return;
+        }
+        requests
+          .slice()
+          .reverse()
+          .forEach((r) => {
+            const div = document.createElement("div");
+            div.classList.add("request");
+            div.innerHTML = `
+      <h3>${r.patient} — ${r.blood}</h3>
+      <p><b>Hospital:</b> ${r.hospital}</p>
+      <p><b>Contact:</b> ${r.phone}</p>
+      <div class="actions">
+        <button onclick="editRequest(${r.id})">Edit</button>
+        <button onclick="deleteRequest(${r.id})">Delete</button>
+      </div>
+    `;
+            requestList.appendChild(div);
+          });
+      }
+
+      requestForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const data = {
+          patient: document.getElementById("patient").value.trim(),
+          blood: document.getElementById("blood").value,
+          hospital: document.getElementById("hospital").value.trim(),
+          phone: document.getElementById("phone").value.trim(),
+        };
+        try {
+          const res = await fetch(
+            `http://localhost:8080/api/user/${userId}/requests`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: "Bearer " + localStorage.getItem("token"),
+              },
+              body: JSON.stringify(data),
+            }
+          );
+          if (res.ok) {
+            requestForm.reset();
+            loadRequests();
+          } else {
+            alert("Failed to submit request");
+          }
+        } catch (err) {
+          console.error("Error submitting request:", err);
+          alert("Error connecting to backend");
+        }
+      });
+
+      async function deleteRequest(id) {
+        try {
+          const res = await fetch(
+            `http://localhost:8080/api/user/${userId}/requests/${id}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem("token"),
+              },
+            }
+          );
+          if (res.ok) loadRequests();
+          else alert("Failed to delete request");
+        } catch (err) {
+          console.error(err);
+          alert("Error connecting to backend");
+        }
+      }
+
+      async function editRequest(id) {
+        try {
+          const res = await fetch(
+            `http://localhost:8080/api/user/${userId}/requests/${id}`,
+            {
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem("token"),
+              },
+            }
+          );
+          if (!res.ok) return;
+          const r = await res.json();
+          document.getElementById("patient").value = r.patient;
+          document.getElementById("blood").value = r.blood;
+          document.getElementById("hospital").value = r.hospital;
+          document.getElementById("phone").value = r.phone;
+
+          // Delete old request to replace it after edit
+          await deleteRequest(id);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", loadRequests);
+    </script>
+  </body>
+</html>

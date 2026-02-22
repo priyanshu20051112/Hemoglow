@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blood Donation Login</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        height: 100vh;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(
+            rgba(255, 255, 255, 0.4),
+            rgba(255, 255, 255, 0.4)
+          ),
+          url("https://i.pinimg.com/736x/22/06/54/22065481b34bfb8835f36313d38eb768.jpg")
+            no-repeat center center fixed;
+        background-size: cover;
+      }
+      .login-container {
+        background: #ffffff;
+        padding: 35px;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        width: 340px;
+        text-align: center;
+        position: relative;
+        z-index: 10;
+      }
+      .login-container img {
+        width: 150px;
+        margin-bottom: 10px;
+      }
+      .login-container h2 {
+        margin-bottom: 20px;
+        color: #c0392b;
+        font-size: 24px;
+      }
+      .login-container input {
+        width: 90%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        outline: none;
+        transition: 0.3s;
+      }
+      .login-container input:focus {
+        border-color: #66a6ff;
+        box-shadow: 0 0 5px #66a6ff;
+      }
+      .login-container button {
+        width: 95%;
+        padding: 12px;
+        background: #c0392b;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 12px;
+        font-size: 16px;
+        transition: 0.3s;
+      }
+      .login-container button:hover {
+        background: #a93226;
+        transform: scale(1.05);
+      }
+      .login-container p {
+        margin-top: 18px;
+        font-size: 14px;
+      }
+      .login-container a {
+        color: #c0392b;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      .login-container a:hover {
+        text-decoration: underline;
+      }
+      .logo-and-tagline {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+      .logo-and-tagline img {
+        width: 120px;
+        height: 120px;
+        border-radius: 70%;
+        object-fit: cover;
+        border: 2px solid #c0392b;
+        margin-bottom: 5px;
+      }
+      .logo-and-tagline h2 {
+        color: #0e0d0d;
+        font-size: 18px;
+        margin: 0px;
+      }
+      .flashmessage {
+        display: none;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        color: white;
+        background: #27ae60;
+        font-size: 14px;
+        transition: opacity 0.5s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="logo-and-tagline">
+        <img
+          src="https://res.cloudinary.com/dyou4xelv/image/upload/v1759400761/logo_vfjwn8.jpg"
+          alt="HemoGlow Logo"
+          height="200"
+          width="200"
+        />
+        <h2>HemoGlow - Bleed for a Cause!</h2>
+      </div>
+
+      <h2>Login</h2>
+      <form id="login-form">
+        <input
+          type="text"
+          placeholder="Username"
+          id="username"
+          required
+        /><br />
+        <input
+          type="password"
+          placeholder="Password"
+          id="password"
+          required
+        /><br />
+        <button type="submit">Login</button>
+      </form>
+      <p>Don't have an account? <a href="register.html">Register</a></p>
+      <div id="flashmessage" class="flashmessage"></div>
+    </div>
+    <script>
+      const form = document.getElementById("login-form");
+      const flashmessage = document.getElementById("flashmessage");
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      function setLoading(loading) {
+        submitBtn.disabled = loading;
+        submitBtn.textContent = loading ? 'Logging in...' : 'Login';
+      }
+
+      function showFlash(msg, isError = false, duration = 2000) {
+        flashmessage.innerText = msg;
+        flashmessage.style.background = isError ? '#e74c3c' : '#27ae60';
+        flashmessage.style.display = 'block';
+        if (duration) setTimeout(() => (flashmessage.style.display = 'none'), duration);
+      }
+
+     
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        setLoading(true);
+        try {
+          const response = await fetch("http://localhost:8080/api/user/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: username, password: password }),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            showFlash(errorText || 'Invalid username or password.', true);
+            setLoading(false);
+            return;
+          }
+
+          const data = await response.json();
+
+          // Defensive checks
+          if (!data || !data.token || !data.id) {
+            showFlash('Login response missing token or id. Try again.', true);
+            setLoading(false);
+            return;
+          }
+
+          // Check if this is an organization account trying to login via user interface
+          if (data.role && (data.role.toUpperCase() === 'ORGANIZATION' || data.role.toUpperCase() === 'ORGANISATION')) {
+            showFlash('Organization accounts should use the organization login page.', true);
+            setLoading(false);
+            return;
+          }
+
+          try {
+            // Synchronous localStorage writes (shouldn't fail under normal conditions)
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username || username);
+            localStorage.setItem('userid', data.id);
+          } catch (storageErr) {
+            console.error('Storage error:', storageErr);
+            showFlash('Failed to save session locally.', true);
+            setLoading(false);
+            return;
+          }
+
+          // Redirect immediately — storage calls are synchronous so no race here
+          showFlash('Login successful — redirecting...', false, 800);
+          window.location.href = 'home.html';
+        } catch (error) {
+          console.error('Error', error);
+          showFlash('Backend not reachable', true);
+          setLoading(false);
+        }
+      });
+    </script>
+  </body>
+</html>

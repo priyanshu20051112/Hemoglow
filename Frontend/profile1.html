@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #fdfdfd;
+      }
+      header {
+        background: #b22222;
+        color: white;
+        padding: 20px 40px;
+        text-align: center;
+        font-size: 26px;
+        font-weight: bold;
+        position: relative;
+      }
+      .profile {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+      }
+      .profile-btn {
+        background: white;
+        color: #b22222;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        margin-top: 8px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        min-width: 160px;
+        z-index: 100;
+      }
+      .dropdown a {
+        display: block;
+        padding: 10px 15px;
+        text-decoration: none;
+        color: #333;
+      }
+      .dropdown a:hover {
+        background: #ffecec;
+        color: #b22222;
+      }
+      .show {
+        display: block;
+      }
+      .container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+      }
+      .profile-card {
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 15px;
+        border: 4px solid #b22222;
+      }
+      h2 {
+        margin: 10px 0;
+        color: #b22222;
+      }
+      .stats {
+        display: flex;
+        justify-content: space-around;
+        margin-top: 25px;
+      }
+      .stat-box {
+        background: #ffecec;
+        padding: 20px;
+        border-radius: 10px;
+        width: 28%;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+      .stat-box h3 {
+        margin: 5px 0;
+        color: #b22222;
+      }
+      .actions button {
+        background: #b22222;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        margin: 5px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      .actions button:hover {
+        background: #8b1a1a;
+      }
+      .edit-form {
+        display: none;
+        margin-top: 20px;
+      }
+      .edit-form input,
+      .edit-form select {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      HemoGlow – My Profile
+      <div class="profile">
+        <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+        <div id="dropdownMenu" class="dropdown">
+          <a href="home.html">Home</a>
+          <a href="profile.html">Profile</a>
+          <a href="donate.html">Donation</a>
+          <a href="request.html">Requests</a>
+          <a href="event.html">Events</a>
+          <a href="#" onclick="logout()">Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="profile-card">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+          class="avatar"
+        />
+        <h2 id="profileName">Demo User</h2>
+        <p><b>Email:</b> <span id="profileEmail">user@example.com</span></p>
+        <p><b>Role:</b> <span id="profileRole">User</span></p>
+
+        <div class="stats">
+          <div class="stat-box">
+            <h3 id="donationsMade">0</h3>
+            <p>Donations</p>
+          </div>
+          <div class="stat-box">
+            <h3 id="requestsPosted">0</h3>
+            <p>Requests</p>
+          </div>
+          <div class="stat-box">
+            <h3 id="eventsJoined">0</h3>
+            <p>Events</p>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button onclick="showEditForm()">Edit Profile</button>
+          <button onclick="logout()">Logout</button>
+        </div>
+
+        <form class="edit-form" id="editForm">
+          <input type="text" id="editName" required />
+          <input type="email" id="editEmail" required />
+          <select id="editRole">
+            <option>User</option>
+            <option>Organisation</option>
+          </select>
+          <button type="submit">Save</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function toggleDropdown() {
+        document.getElementById("dropdownMenu").classList.toggle("show");
+      }
+      window.onclick = function (e) {
+        if (!e.target.matches(".profile-btn"))
+          document
+            .querySelectorAll(".dropdown")
+            .forEach((d) => d.classList.remove("show"));
+      };
+
+      const profileName = document.getElementById("profileName");
+      const profileEmail = document.getElementById("profileEmail");
+      const profileRole = document.getElementById("profileRole");
+      const editForm = document.getElementById("editForm");
+      const editName = document.getElementById("editName");
+      const editEmail = document.getElementById("editEmail");
+      const editRole = document.getElementById("editRole");
+
+      const userId = localStorage.getItem("userid");
+      const username = localStorage.getItem("username");
+      if (!userId || !username) {
+        window.location.href = "login_with_register.html";
+      }
+
+      function roleBackendToDisplay(role) {
+        if (!role) return 'User';
+        const r = role.toUpperCase();
+        if (r === 'USER') return 'User';
+        if (r === 'ORGANIZATION' || r === 'ORGANISATION') return 'Organisation';
+        return role;
+      }
+
+      function roleDisplayToBackend(roleDisplay) {
+        if (!roleDisplay) return 'USER';
+        const r = roleDisplay.toLowerCase();
+        if (r.startsWith('user')) return 'USER';
+        if (r.includes('org')) return 'ORGANIZATION';
+        return roleDisplay.toUpperCase();
+      }
+
+      async function loadProfile() {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:8080/api/user/${userId}`, {
+            headers: {
+              Authorization: token ? 'Bearer ' + token : '',
+              'Content-Type': 'application/json'
+            },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            profileName.textContent = data.username;
+            profileEmail.textContent = data.email || "";
+            profileRole.textContent = roleBackendToDisplay(data.userRole);
+          } else if (res.status === 401 || res.status === 403) {
+            alert('Session expired. Please login again.');
+            logout();
+          } else {
+            alert('Failed to fetch profile');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Cannot fetch profile. Backend might be down.');
+        }
+      }
+
+      async function loadStats() {
+        try {
+          const auth = localStorage.getItem("auth");
+          const [donRes, reqRes, evtRes] = await Promise.all([
+            fetch(`http://localhost:8080/api/user/${userId}/donations`, {
+              headers: { Authorization: "Basic " + auth },
+            }),
+            fetch(`http://localhost:8080/api/user/${userId}/requests`, {
+              headers: { Authorization: "Basic " + auth },
+            }),
+            fetch(`http://localhost:8080/api/user/${userId}/events`, {
+              headers: { Authorization: "Basic " + auth },
+            }),
+          ]);
+
+          const donations = await donRes.json();
+          const requests = await reqRes.json();
+          const events = await evtRes.json();
+
+          document.getElementById("donationsMade").textContent =
+            donations.length;
+          document.getElementById("requestsPosted").textContent =
+            requests.length;
+          document.getElementById("eventsJoined").textContent = events.length;
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      function showEditForm() {
+        editName.value = profileName.textContent;
+        editEmail.value = profileEmail.textContent;
+       
+        editRole.value = profileRole.textContent;
+        editForm.style.display = "block";
+      }
+
+      editForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const updatedData = {
+          username: editName.value.trim(),
+          email: editEmail.value.trim(),
+         
+          userRole: roleDisplayToBackend(editRole.value),
+        };
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:8080/api/user/${userId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: token ? 'Bearer ' + token : '',
+            },
+            body: JSON.stringify(updatedData),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            profileName.textContent = data.username;
+            profileEmail.textContent = data.email || "";
+            profileRole.textContent = data.userRole || "User";
+            editForm.style.display = "none";
+            alert("Profile updated successfully!");
+            if (updatedData.username) {
+              localStorage.setItem('username', updatedData.username);
+            }
+          } else {
+            alert("Failed to update profile");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error connecting to backend");
+        }
+      });
+
+      function logout() {
+        localStorage.clear();
+        window.location.href = "login_with_register.html";
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProfile();
+        loadStats();
+      });
+    </script>
+  </body>
+</html>

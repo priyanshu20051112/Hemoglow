@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Blood Bank Registration Test</h1>
+    
+    <div class="test-section">
+        <h2>Test User Registration</h2>
+        <button onclick="testUserRegistration()">Test User Registration</button>
+        <div id="userResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Organization Registration</h2>
+        <button onclick="testOrganizationRegistration()">Test Organization Registration</button>
+        <div id="organizationResult" class="result"></div>
+    </div>
+
+    <script>
+        async function testUserRegistration() {
+            const resultDiv = document.getElementById('userResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            const userData = {
+                username: `user_${Date.now()}`,
+                fullName: "John Doe",
+                name: "John Doe",
+                email: `user_${Date.now()}@example.com`,
+                phone: "1234567890",
+                address: "123 Main St, City",
+                password: "password123",
+                userRole: "USER"
+            };
+
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✓ User Registration Successful!</strong><br>
+                        User ID: ${data.id}<br>
+                        Username: ${data.username}<br>
+                        Role: ${data.role}<br>
+                        Token: ${data.token ? 'Generated' : 'None'}<br>
+                        Organization ID: ${data.organizationId || 'N/A'}<br>
+                        Organization Custom ID: ${data.organizationCustomId || 'N/A'}
+                    `;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>✗ User Registration Failed:</strong><br>${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>✗ Error:</strong><br>${error.message}`;
+            }
+        }
+
+        async function testOrganizationRegistration() {
+            const resultDiv = document.getElementById('organizationResult');
+            resultDiv.innerHTML = 'Testing...';
+            
+            const orgData = {
+                username: `org_${Date.now()}`,
+                fullName: "Red Cross Organization",
+                name: "Red Cross Organization",
+                email: `org_${Date.now()}@redcross.org`,
+                phone: "9876543210",
+                address: "456 Organization Ave, City",
+                password: "orgPassword123",
+                userRole: "ORGANIZATION"
+            };
+
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(orgData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✓ Organization Registration Successful!</strong><br>
+                        User ID: ${data.id}<br>
+                        Username: ${data.username}<br>
+                        Role: ${data.role}<br>
+                        Token: ${data.token ? 'Generated' : 'None'}<br>
+                        Organization ID: ${data.organizationId || 'N/A'}<br>
+                        <strong>Organization Custom ID: ${data.organizationCustomId || 'N/A'}</strong>
+                    `;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>✗ Organization Registration Failed:</strong><br>${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>✗ Error:</strong><br>${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood Inventory - HemoGlow</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff5f5; margin:0; }
+    header {
+      background: #b22222;
+      color: white;
+      padding: 18px 36px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(178,34,34,0.08);
+      position: relative;
+    }
+    .logo { height: 44px; margin-right: 18px; }
+    h1 { margin:0; font-size: 24px; letter-spacing: 1px; }
+    .container {
+      max-width: 900px;
+      margin: 36px auto;
+      padding: 28px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    h2 { color: #b22222; margin-bottom: 24px; font-size: 22px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 13px; border-bottom: 1px solid #eee; text-align: center; }
+    th { background: #ffecec; color: #b22222; font-size: 16px; }
+    .low { color: #b22222; font-weight: bold; }
+    .ok { color: #4BB543; font-weight: bold; }
+    form { margin-bottom: 24px; text-align: center; }
+    input[type="text"], input[type="number"] {
+      padding: 8px; margin-right: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px;
+    }
+    button {
+      background: #b22222; color: white; border: none; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 15px;
+      transition: background 0.2s;
+    }
+    button:hover { background: #a11f1f; }
+    .profile {
+      position: absolute;
+      top: 18px;
+      right: 36px;
+    }
+    .profile-btn {
+      background: white;
+      color: #b22222;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(178,34,34,0.08);
+    }
+    .profile-btn:hover { background: #ffecec; }
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      margin-top: 10px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      min-width: 170px;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 12px 18px;
+      color: #1e293b;
+      text-decoration: none;
+      font-size: 15px;
+    }
+    .dropdown a:hover {
+      background: #ffecec;
+      color: #b22222;
+    }
+    .show { display: block; }
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 32px 48px;
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+      z-index: 9999;
+      text-align: center;
+      border: 2px solid #b22222;
+    }
+    .modal.success { border-color: #4BB543; }
+    .modal.error { border-color: #b22222; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+    <h1>HemoGlow – Blood Inventory</h1>
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="org_profile.html">Org Profile</a>
+        <a href="manage_requests.html">Manage Requests</a>
+        <a href="inventory.html">Blood Inventory</a>
+        <a href="org_events.html">Events</a>
+        <a href="login_organisation.html" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+  <div class="container">
+    <h2>Current Stock Levels</h2>
+    <form id="inventoryForm">
+      <input type="text" id="bloodType" placeholder="Blood Type (e.g. A+)" required>
+      <input type="number" id="units" placeholder="Units (L)" required>
+      <button type="submit">Add / Update</button>
+    </form>
+    <table id="inventoryTable">
+      <tr>
+        <th>Blood Type</th>
+        <th>Units Available (L)</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </table>
+    <div id="statusMsg" style="margin-top:18px;color:#b22222;font-weight:bold;"></div>
+  </div>
+  <script>
+    function showModal(message, isSuccess = true) {
+      let modal = document.getElementById('feedbackModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'feedbackModal';
+        modal.className = 'modal ' + (isSuccess ? 'success' : 'error');
+        modal.innerHTML = `<span id='modalMsg'></span><br><button onclick='document.getElementById("feedbackModal").remove()' style='margin-top:18px;padding:8px 22px;border:none;background:#b22222;color:#fff;border-radius:6px;cursor:pointer;'>OK</button>`;
+        document.body.appendChild(modal);
+      }
+      modal.className = 'modal ' + (isSuccess ? 'success' : 'error');
+      document.getElementById('modalMsg').innerText = message;
+    }
+    function toggleDropdown() {
+      document.getElementById("dropdownMenu").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-btn')) {
+        document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+      }
+    }
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userid');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      localStorage.removeItem('orgProfile');
+    }
+    const inventoryTable = document.getElementById("inventoryTable");
+    const form = document.getElementById("inventoryForm");
+    let inventory = [];
+    async function loadServerInventory() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      if (!token || !userId) return false;
+      try {
+        const res = await fetch(`http://localhost:8080/api/inventory/org/${userId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) return false;
+        const list = await res.json();
+        inventory = list.map(i => ({ bloodType: i.bloodGroup, units: i.liters }));
+        renderTable();
+        return true;
+      } catch (e) {
+        showModal('Failed to load server inventory', false);
+        return false;
+      }
+    }
+    function renderTable() {
+      inventoryTable.querySelectorAll("tr:not(:first-child)").forEach(r => r.remove());
+      if (!inventory || inventory.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan='4' style='color:gray;'>No inventory data available.</td>`;
+        inventoryTable.appendChild(row);
+        return;
+      }
+      inventory.forEach((item, index) => {
+        const status = item.units < 5 ? "Low" : "Sufficient";
+        const statusClass = item.units < 5 ? "low" : "ok";
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.bloodType}</td>
+          <td>${item.units}</td>
+          <td class="${statusClass}">${status}</td>
+          <td><button onclick="deleteEntry(${index})">Delete</button></td>
+        `;
+        inventoryTable.appendChild(row);
+      });
+    }
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const bloodType = document.getElementById("bloodType").value.trim().toUpperCase();
+      const units = parseInt(document.getElementById("units").value);
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      if (!bloodType || isNaN(units) || !token || !userId) {
+        showModal('All fields required!', false);
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:8080/api/inventory/org/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ bloodGroup: bloodType, liters: units })
+        });
+        if (res.ok) {
+          showModal('Inventory updated!', true);
+          await loadServerInventory();
+          form.reset();
+        } else {
+          const errorText = await res.text();
+          showModal('Failed to update inventory: ' + errorText, false);
+        }
+      } catch (err) {
+        showModal('Error updating inventory', false);
+      }
+    });
+    async function deleteEntry(index) {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      if (!token || !userId) return;
+      const bloodType = inventory[index].bloodType;
+      try {
+        const res = await fetch(`http://localhost:8080/api/inventory/org/${userId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ bloodGroup: bloodType, liters: 0 })
+        });
+        if (res.ok) {
+          showModal('Inventory entry deleted!', true);
+          await loadServerInventory();
+        } else {
+          const errorText = await res.text();
+          showModal('Failed to delete inventory entry: ' + errorText, false);
+        }
+      } catch (err) {
+        showModal('Error deleting inventory entry', false);
+      }
+    }
+    (async function ensureAuth(){
+      const token = localStorage.getItem('token');
+      if(!token) { window.location.href = 'login_organisation.html'; return; }
+      const ok = await loadServerInventory();
+      if (!ok) {
+        renderTable();
+      }
+    })();
+  </script>
+</body>
+</html>

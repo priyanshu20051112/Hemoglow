@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Events</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #fdfdfd;
+      }
+      header {
+        background: #b22222;
+        color: white;
+        padding: 20px 40px;
+        text-align: center;
+        font-size: 26px;
+        font-weight: bold;
+        position: relative;
+      }
+      .profile {
+        position: absolute;
+        top: 20px;
+        right: 40px;
+      }
+      .profile-btn {
+        background: white;
+        color: #b22222;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 20px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .dropdown {
+        display: none;
+        position: absolute;
+        right: 0;
+        margin-top: 8px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        min-width: 160px;
+        z-index: 100;
+      }
+      .dropdown a {
+        display: block;
+        padding: 10px 15px;
+        color: #333;
+        text-decoration: none;
+      }
+      .dropdown a:hover {
+        background: #ffecec;
+        color: #b22222;
+      }
+      .show {
+        display: block;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+      }
+      .event-card {
+        background: #ffecec;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+      button {
+        background: #b22222;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      button:hover {
+        background: #8b1a1a;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      HemoGlow – Events
+      <div class="profile">
+        <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+        <div id="dropdownMenu" class="dropdown">
+          <a href="home.html">Home</a>
+          <a href="profile.html">Profile</a>
+          <a href="request.html">Requests</a>
+          <a href="event.html">Events</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="container" id="eventsList">Loading events...</div>
+
+    <script>
+      function toggleDropdown() {
+        document.getElementById("dropdownMenu").classList.toggle("show");
+      }
+      window.onclick = function (e) {
+        if (!e.target.matches(".profile-btn")) {
+          document
+            .querySelectorAll(".dropdown")
+            .forEach((d) => d.classList.remove("show"));
+        }
+      };
+
+      const eventsList = document.getElementById("eventsList");
+      const userId = localStorage.getItem("userid");
+      const username = localStorage.getItem("username");
+      const password = localStorage.getItem("password");
+
+      if (!userId) {
+        alert("Please login first");
+        window.location.href = "home.html";
+      }
+
+      async function loadEvents() {
+        try {
+          // Fetch all available events
+          const res = await fetch(`http://localhost:8080/api/user/events`, {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+          });
+          const allEvents = await res.json();
+
+          // Fetch events the user has joined
+          const joinedRes = await fetch(`http://localhost:8080/api/user/${userId}/events`, {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+          });
+          const joinedEvents = await joinedRes.json();
+          const joinedEventIds = joinedEvents.map((e) => e.event.id);
+
+          eventsList.innerHTML = "";
+
+          if (!allEvents || allEvents.length === 0) {
+            eventsList.innerHTML = "<p>No events available at the moment.</p>";
+            return;
+          }
+
+          allEvents.forEach((event) => {
+            const card = document.createElement("div");
+            card.classList.add("event-card");
+            const alreadyJoined = joinedEventIds.includes(event.id);
+            card.innerHTML = `
+        <h3>${event.title}</h3>
+        <p><b>Date:</b> ${event.eventDate}</p>
+        <p><b>Location:</b> ${event.location}</p>
+        <button onclick="joinEvent(${event.id})" ${
+              alreadyJoined ? "disabled" : ""
+            }>
+          ${alreadyJoined ? " Joined" : "Join Event"}
+        </button>
+      `;
+            eventsList.appendChild(card);
+          });
+        } catch (err) {
+          console.error("Error fetching events:", err);
+          eventsList.innerHTML = "<p>Failed to load events.</p>";
+        }
+      }
+
+      async function joinEvent(eventId) {
+        try {
+          const res = await fetch(
+            `http://localhost:8080/api/user/${userId}/events/${eventId}/join`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem("token"),
+              },
+            }
+          );
+          if (res.ok) {
+            const msg = await res.text();
+            alert(msg);
+            loadEvents(); // refresh list
+          } else {
+            alert("Failed to join event");
+          }
+        } catch (err) {
+          console.error("Error joining event:", err);
+          alert("Error connecting to backend");
+        }
+      }
+
+      // Load events on page load
+      document.addEventListener("DOMContentLoaded", loadEvents);
+    </script>
+  </body>
+</html>

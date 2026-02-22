@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organization Events - HemoGlow</title>
+  <style>
+    :root { --primary:#B22222; --dark:#1e293b; --muted:#64748b; --bg:#fff5f5; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin:0; }
+    header { background: var(--primary); color:white; padding:15px 30px; position:relative; display:flex; align-items:center; gap:15px; }
+    header .logo { height:40px; }
+    header h1 { margin:0; font-size:22px; }
+    .profile { position:absolute; top:15px; right:30px; }
+    .profile-btn { background:white; color:var(--primary); border:none; padding:8px 14px; border-radius:20px; font-weight:bold; cursor:pointer; }
+    .dropdown { display:none; position:absolute; right:0; margin-top:8px; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); min-width:160px; z-index:100; }
+    .dropdown a { display:block; padding:10px 15px; color:var(--dark); text-decoration:none; }
+    .dropdown a:hover { background:#ffecec; color:var(--primary); }
+    .show { display:block; }
+    .container { max-width:800px; margin:30px auto; background:white; padding:25px; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.1);}
+    h2 { color:var(--primary); margin-bottom:20px; text-align:center; }
+    label { display:block; margin:12px 0 6px; font-weight:bold; color:var(--dark);}
+    input, textarea { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; font-size:15px; }
+    button { margin-top:20px; padding:12px; width:100%; background:var(--primary); color:white; font-weight:bold; border:none; border-radius:8px; cursor:pointer; transition:0.3s; }
+    button:hover { background:#8b1a1a; }
+    .event-list { margin-top:30px; }
+    .event-card { padding:15px; border:1px solid #ddd; border-radius:10px; margin-bottom:15px; background:#ffecec; }
+    .event-card h3 { margin:0; color:var(--primary); }
+    .event-card p { margin:5px 0; color:var(--muted); }
+    .delete-btn { background:#f44336; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+    <h1>HemoGlow – Manage Events</h1>
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="org_profile.html">Org Profile</a>
+        <a href="manage_requests.html">Manage Requests</a>
+        <a href="inventory.html">Blood Inventory</a>
+        <a href="org_events.html">Events</a>
+        <a href="login_organisation.html" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>Add New Event</h2>
+    <form id="eventForm">
+      <label for="title">Event Title</label>
+      <input type="text" id="title" required>
+      <label for="date">Date</label>
+      <input type="date" id="date" required>
+      <label for="location">Location</label>
+      <input type="text" id="location" required>
+      <label for="details">Details</label>
+      <textarea id="details" rows="3" required></textarea>
+      <button type="submit">Add Event</button>
+    </form>
+
+    <div class="event-list" id="eventList">
+      <h2>Existing Events</h2>
+    </div>
+    <!-- Edit Event Modal -->
+    <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:999; align-items:center; justify-content:center;">
+      <div style="background:white; padding:30px; border-radius:12px; max-width:400px; margin:auto; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <h2>Edit Event</h2>
+        <form id="editEventForm">
+          <label for="editTitle">Event Title</label>
+          <input type="text" id="editTitle" required>
+          <label for="editDate">Date</label>
+          <input type="date" id="editDate" required>
+          <label for="editLocation">Location</label>
+          <input type="text" id="editLocation" required>
+          <label for="editDetails">Details</label>
+          <textarea id="editDetails" rows="3" required></textarea>
+          <button type="submit">Save Changes</button>
+          <button type="button" onclick="closeEditModal()" style="background:#ccc; color:#333; margin-top:10px;">Cancel</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleDropdown(){document.getElementById("dropdownMenu").classList.toggle("show");}
+    window.onclick=function(e){if(!e.target.matches('.profile-btn'))document.querySelectorAll(".dropdown").forEach(d=>d.classList.remove("show")); }
+    function logout(){ localStorage.removeItem("orgLoggedIn"); }
+
+    const form = document.getElementById("eventForm");
+    const list = document.getElementById("eventList");
+    const token = localStorage.getItem("token");
+    // userId for organization actions
+    const userId = localStorage.getItem("userid");
+
+    async function fetchEvents() {
+      if (!userId || !token) {
+        window.location.href = "login_organisation.html";
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${userId}/events`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const events = await res.json();
+          renderEvents(events);
+        } else {
+          list.innerHTML = "<h2>Existing Events</h2><p style='color:gray;'>Failed to load events.</p>";
+        }
+      } catch (err) {
+        list.innerHTML = "<h2>Existing Events</h2><p style='color:gray;'>Error loading events.</p>";
+      }
+    }
+
+    function renderEvents(events) {
+      list.innerHTML = "<h2>Existing Events</h2>";
+      if (!events || events.length === 0) {
+        list.innerHTML += "<p style='color:gray;'>No events added yet.</p>";
+        return;
+      }
+      events.forEach(async (e) => {
+        const card = document.createElement("div");
+        card.className = "event-card";
+        let participantsHtml = '<p style="color:#64748b;">Loading participants...</p>';
+        try {
+          const res = await fetch(`http://localhost:8080/api/org/${userId}/events/${e.id}/participants`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            const participants = await res.json();
+            if (participants.length > 0) {
+              participantsHtml = '<b>Participants:</b><ul>' + participants.map(p => `<li>${p.user.username}</li>`).join('') + '</ul>';
+            } else {
+              participantsHtml = '<p style="color:#64748b;">No participants yet.</p>';
+            }
+          } else {
+            participantsHtml = '<p style="color:#b22222;">Failed to load participants.</p>';
+          }
+        } catch {
+          participantsHtml = '<p style="color:#b22222;">Error loading participants.</p>';
+        }
+        card.innerHTML = `
+          <h3>${e.title}</h3>
+          <p><b>Date:</b> ${e.eventDate}</p>
+          <p><b>Location:</b> ${e.location}</p>
+          <p><b>Details:</b> ${e.details || ''}</p>
+          ${participantsHtml}
+          <button class="delete-btn" onclick="deleteEvent(${e.id})">Delete</button>
+          <button style="background:#2196f3; color:white; padding:6px 10px; border:none; border-radius:6px; cursor:pointer; margin-top:8px; margin-left:8px;" onclick="openEditModal(${e.id}, '${e.title.replace(/'/g,"&#39;")}', '${e.eventDate}', '${e.location.replace(/'/g,"&#39;")}', '${(e.details||'').replace(/'/g,"&#39;")}')">Edit</button>
+        `;
+    // Edit event modal logic
+    let editingEventId = null;
+    function openEditModal(id, title, date, location, details) {
+      editingEventId = id;
+      document.getElementById('editTitle').value = title;
+      document.getElementById('editDate').value = date;
+      document.getElementById('editLocation').value = location;
+      document.getElementById('editDetails').value = details;
+      document.getElementById('editModal').style.display = 'flex';
+    }
+    function closeEditModal() {
+      editingEventId = null;
+      document.getElementById('editModal').style.display = 'none';
+    }
+    document.getElementById('editEventForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!editingEventId) return;
+      const updatedEvent = {
+        title: document.getElementById('editTitle').value,
+        eventDate: document.getElementById('editDate').value,
+        location: document.getElementById('editLocation').value,
+        details: document.getElementById('editDetails').value
+      };
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${userId}/events/${editingEventId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(updatedEvent)
+        });
+        if (res.ok) {
+          closeEditModal();
+          fetchEvents();
+        } else {
+          alert('Failed to update event');
+        }
+      } catch (err) {
+        alert('Error updating event');
+      }
+    });
+        list.appendChild(card);
+      });
+    }
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      const newEvent = {
+        title: document.getElementById("title").value,
+        eventDate: document.getElementById("date").value,
+        location: document.getElementById("location").value,
+        details: document.getElementById("details").value
+      };
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${userId}/events`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify(newEvent)
+        });
+        if (res.ok) {
+          form.reset();
+          fetchEvents();
+        } else {
+          alert("Failed to add event");
+        }
+      } catch (err) {
+        alert("Error adding event");
+      }
+    });
+
+    async function deleteEvent(eventId) {
+      if (!confirm("Delete this event?")) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${userId}/events/${eventId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          fetchEvents();
+        } else {
+          alert("Failed to delete event");
+        }
+      } catch (err) {
+        alert("Error deleting event");
+      }
+    }
+
+    fetchEvents();
+  </script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organization Profile - HemoGlow</title>
+  <style>
+    :root {
+      --primary: #B22222;
+      --dark: #1e293b;
+      --muted: #64748b;
+      --bg: #fff5f5;
+    }
+   body {
+ font-family: 'Segoe UI', Arial, sans-serif;
+ margin: 0;
+ background-image: url('https://i.pinimg.com/736x/ff/f4/f2/fff4f20aa2d0773d0b712bac8eb99ec6.jpg');
+ background-size: cover;
+ background-repeat: no-repeat;
+ background-attachment: fixed;
+ background-position: center;
+background-color: var(--bg); /* Keep the original background color as a fallback */
+}header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 30px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    header .logo { height: 40px; }
+    header h1 { margin:0; font-size: 22px; }
+
+    .profile {
+      position: absolute;
+      top: 15px;
+      right: 30px;
+    }
+    .profile-btn {
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .profile-btn:hover { background: #ffecec; }
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      min-width: 160px;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 10px 15px;
+      color: var(--dark);
+      text-decoration: none;
+    }
+    .dropdown a:hover { background: #ffecec; color: var(--primary); }
+    .show { display: block; }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 { color: var(--primary); margin-bottom: 15px; text-align: center; }
+    label { display: block; margin: 12px 0 6px; font-weight: bold; color: var(--dark);}
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    textarea { resize: vertical; }
+    button {
+      margin-top: 20px;
+      padding: 12px;
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover { background: #8b1a1a; }
+    .saved { margin-top: 15px; color: green; font-weight: bold; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+    <h1>HemoGlow – Organization Profile</h1>
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="org_home.html">Home</a>
+        <a href="manage_requests.html">Manage Requests</a>
+        <a href="inventory.html">Blood Inventory</a>
+        <a href="org_events.html">Events</a>
+        <a href="login_organisation.html" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>Organization Profile</h2>
+    <div id="orgDetails" style="margin-bottom:30px;">
+      <p><strong>Name:</strong> <span id="orgName"></span></p>
+      <p><strong>Email:</strong> <span id="email"></span></p>
+      <!-- <p><strong>Phone:</strong> <span id="phone"></span></p>
+      <p><strong>Address:</strong> <span id="address"></span></p> -->
+    </div>
+
+    <hr style="margin:30px 0;">
+    <h2>Events Conducted</h2>
+    <table id="eventsTable" style="width:100%;margin-bottom:30px;">
+      <tr><th>#</th></tr>
+    </table>
+
+    <h2>Requests Accepted/Rejected</h2>
+    <table id="requestsTable" style="width:100%">
+      <tr><th>#</th></tr>
+    </table>
+  </div>
+
+  <script>
+    // Dropdown toggle
+    function toggleDropdown() {
+      document.getElementById("dropdownMenu").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-btn')) {
+        document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+      }
+    }
+    function logout() {
+      // Clear stored auth and redirect to org login
+      localStorage.removeItem('token');
+      localStorage.removeItem('userid');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      localStorage.removeItem('orgProfile');
+      window.location.href = 'login_organisation.html';
+    }
+
+  const orgNameSpan = document.getElementById("orgName");
+  const emailSpan = document.getElementById("email");
+  const phoneSpan = document.getElementById("phone");
+  const addressSpan = document.getElementById("address");
+    const eventsTable = document.getElementById("eventsTable");
+    const requestsTable = document.getElementById("requestsTable");
+
+    // Load profile from backend using JWT; fall back to localStorage
+    async function loadProfile() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      let loaded = false;
+      if (token && userId) {
+        try {
+          const res = await fetch(`http://localhost:8080/api/user/dashboard/${userId}`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.ok) {
+            const obj = await res.json();
+            if (orgNameSpan) orgNameSpan.textContent = obj.username || obj.name || '';
+            if (emailSpan) emailSpan.textContent = obj.email || '';
+            if (phoneSpan) phoneSpan.textContent = obj.phone || obj.contactNumber || '';
+            if (addressSpan) addressSpan.textContent = obj.address || '';
+            loaded = true;
+          }
+        } catch (e) {
+          console.warn('Failed to fetch org profile from users table', e);
+        }
+      }
+      if (!loaded) {
+        const savedProfile = JSON.parse(localStorage.getItem("orgProfile")) || {};
+        if (savedProfile.orgName) orgNameSpan.textContent = savedProfile.orgName;
+        if (savedProfile.email) emailSpan.textContent = savedProfile.email;
+        if (savedProfile.phone) phoneSpan.textContent = savedProfile.phone;
+        if (savedProfile.address) addressSpan.textContent = savedProfile.address;
+      }
+    }
+    loadProfile();
+
+    // Load events conducted by this org (userId)
+    async function loadEvents() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      if (!token || !userId) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/organization/${userId}/events`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const events = await res.json();
+          events.slice(0, 10).forEach((ev, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${idx + 1}</td>`;
+            eventsTable.appendChild(row);
+          });
+        }
+      } catch (e) { console.warn('Failed to load events', e); }
+    }
+    loadEvents();
+
+    // Load requests accepted/rejected for this org (userId)
+    async function loadRequests() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userid');
+      if (!token || !userId) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/organization/${userId}/requests`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const requests = await res.json();
+          requests.filter(r => r.status && r.status !== 'PENDING').slice(0, 10).forEach((req, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${idx + 1}</td>`;
+            requestsTable.appendChild(row);
+          });
+        }
+      } catch (e) { console.warn('Failed to load requests', e); }
+    }
+    loadRequests();
+
+  </script>
+</body>
+</html>

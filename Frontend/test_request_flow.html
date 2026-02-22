@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Flow Test - Blood Bank</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Blood Bank Request Flow Test</h1>
+    
+    <div class="test-section">
+        <h2>Step 1: Create Test Users</h2>
+        <button onclick="createTestUser()">Create Test User</button>
+        <button onclick="createTestOrganization()">Create Test Organization</button>
+        <div id="createResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 2: User Login & Request</h2>
+        <button onclick="testUserLogin()">Login as User</button>
+        <button onclick="createRequest()">Create Blood Request</button>
+        <div id="userResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Step 3: Organization Login & View Requests</h2>
+        <button onclick="testOrgLogin()">Login as Organization</button>
+        <button onclick="fetchOrgRequests()">Fetch Organization Requests</button>
+        <div id="orgResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <div id="debugInfo" class="result info">
+            <pre id="debugData">Click buttons above to see debug information...</pre>
+        </div>
+    </div>
+
+    <script>
+        let testUser = null;
+        let testOrg = null;
+        let userToken = null;
+        let orgToken = null;
+        let testRequest = null;
+
+        function updateDebug() {
+            const debugData = {
+                testUser: testUser,
+                testOrg: testOrg,
+                userToken: userToken ? 'SET' : 'NOT SET',
+                orgToken: orgToken ? 'SET' : 'NOT SET',
+                testRequest: testRequest,
+                localStorage: {
+                    userid: localStorage.getItem('userid'),
+                    organizationId: localStorage.getItem('organizationId'),
+                    token: localStorage.getItem('token') ? 'SET' : 'NOT SET'
+                }
+            };
+            document.getElementById('debugData').textContent = JSON.stringify(debugData, null, 2);
+        }
+
+        async function createTestUser() {
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = 'Creating test user...';
+            
+            const userData = {
+                username: `testuser_${Date.now()}`,
+                fullName: "Test User",
+                name: "Test User",
+                email: `testuser_${Date.now()}@example.com`,
+                phone: "1234567890",
+                address: "123 Test St",
+                password: "password123",
+                userRole: "USER"
+            };
+
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(userData)
+                });
+
+                if (response.ok) {
+                    testUser = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✓ User created: ${testUser.username} (ID: ${testUser.id})`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `✗ User creation failed: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `✗ Error: ${error.message}`;
+            }
+            updateDebug();
+        }
+
+        async function createTestOrganization() {
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.innerHTML = 'Creating test organization...';
+            
+            const orgData = {
+                username: `testorg_${Date.now()}`,
+                fullName: "Test Blood Bank",
+                name: "Test Blood Bank",
+                email: `testorg_${Date.now()}@bloodbank.org`,
+                phone: "9876543210",
+                address: "456 Hospital Ave",
+                password: "orgPassword123",
+                userRole: "ORGANIZATION"
+            };
+
+            try {
+                const response = await fetch("http://localhost:8080/api/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(orgData)
+                });
+
+                if (response.ok) {
+                    testOrg = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✓ Organization created: ${testOrg.username} (User ID: ${testOrg.id}, Org ID: ${testOrg.organizationId}, Custom ID: ${testOrg.organizationCustomId})`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `✗ Organization creation failed: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `✗ Error: ${error.message}`;
+            }
+            updateDebug();
+        }
+
+        async function testUserLogin() {
+            const resultDiv = document.getElementById('userResult');
+            if (!testUser) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '✗ Please create a test user first';
+                return;
+            }
+
+            resultDiv.innerHTML = 'Logging in as user...';
+
+            try {
+                const response = await fetch("http://localhost:8080/api/user/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: testUser.username,
+                        password: "password123"
+                    })
+                });
+
+                if (response.ok) {
+                    const loginData = await response.json();
+                    userToken = loginData.token;
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✓ User logged in successfully (Token: ${userToken ? 'SET' : 'NOT SET'})`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `✗ User login failed: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `✗ Error: ${error.message}`;
+            }
+            updateDebug();
+        }
+
+        async function createRequest() {
+            const resultDiv = document.getElementById('userResult');
+            if (!testUser || !testOrg || !userToken) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '✗ Please create test user & organization, and login as user first';
+                return;
+            }
+
+            resultDiv.innerHTML = 'Creating blood request...';
+
+            const requestData = {
+                patient: "Test Patient",
+                bloodGroup: "O+",
+                hospital: "Test Hospital",
+                phone: "9876543210",
+                amount: 2,
+                organization: { id: testOrg.organizationId } // Use the organization table ID
+            };
+
+            try {
+                const response = await fetch(`http://localhost:8080/api/user/${testUser.id}/requests`, {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${userToken}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    testRequest = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✓ Request created successfully (ID: ${testRequest.id}, Status: ${testRequest.status})`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `✗ Request creation failed: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `✗ Error: ${error.message}`;
+            }
+            updateDebug();
+        }
+
+        async function testOrgLogin() {
+            const resultDiv = document.getElementById('orgResult');
+            if (!testOrg) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '✗ Please create a test organization first';
+                return;
+            }
+
+            resultDiv.innerHTML = 'Logging in as organization...';
+
+            try {
+                const response = await fetch("http://localhost:8080/api/org/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        username: testOrg.username,
+                        password: "orgPassword123"
+                    })
+                });
+
+                if (response.ok) {
+                    const loginData = await response.json();
+                    orgToken = loginData.token;
+                    // Simulate what the frontend does
+                    localStorage.setItem('organizationId', loginData.organizationId);
+                    localStorage.setItem('token', loginData.token);
+                    localStorage.setItem('userid', loginData.id);
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✓ Organization logged in (User ID: ${loginData.id}, Org ID: ${loginData.organizationId}, Custom ID: ${loginData.organizationCustomId})`;
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `✗ Organization login failed: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `✗ Error: ${error.message}`;
+            }
+            updateDebug();
+        }
+
+        async function fetchOrgRequests() {
+            const resultDiv = document.getElementById('orgResult');
+            if (!testOrg || !orgToken) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '✗ Please create organization and login first';
+                return;
+            }
+
+            resultDiv.innerHTML = 'Fetching organization requests...';
+
+            try {
+                const orgId = localStorage.getItem('organizationId') || testOrg.organizationId;
+                const response = await fetch(`http://localhost:8080/api/org/${orgId}/requests`, {
+                    headers: { "Authorization": `Bearer ${orgToken}` }
+                });
+
+                if (response.ok) {
+                    const requests = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✓ Found ${requests.length} requests:<br>` + 
+                        requests.map(req => `- Request ID: ${req.id}, Patient: ${req.patient}, Blood Group: ${req.bloodGroup}, Status: ${req.status}`).join('<br>');
+                } else {
+                    const error = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `✗ Failed to fetch requests: ${error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `✗ Error: ${error.message}`;
+            }
+            updateDebug();
+        }
+
+        updateDebug();
+    </script>
+</body>
+</html>

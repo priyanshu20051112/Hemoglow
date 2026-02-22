@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Requests - HemoGlow</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #fff5f5; margin:0; }
+    header {
+      background: #b22222;
+      color: white;
+      padding: 18px 36px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(178,34,34,0.08);
+      position: relative;
+    }
+    .logo { height: 44px; margin-right: 18px; }
+    h1 { margin:0; font-size: 24px; letter-spacing: 1px; }
+    .container {
+      max-width: 1000px;
+      margin: 36px auto;
+      padding: 28px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    h2 { color: #b22222; margin-bottom: 24px; font-size: 22px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 13px; border-bottom: 1px solid #eee; text-align: center; }
+    th { background: #ffecec; color: #b22222; font-size: 16px; }
+    .btn { padding: 7px 14px; border:none; border-radius: 6px; cursor: pointer; font-size: 15px; }
+    .approve { background: #4BB543; color: white; }
+    .reject { background: #b22222; color: white; }
+    .empty { color: gray; text-align: center; padding: 15px; }
+    .profile {
+      position: absolute;
+      top: 18px;
+      right: 36px;
+    }
+    .profile-btn {
+      background: white;
+      color: #b22222;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(178,34,34,0.08);
+    }
+    .profile-btn:hover { background: #ffecec; }
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      margin-top: 10px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      min-width: 170px;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 12px 18px;
+      color: #1e293b;
+      text-decoration: none;
+      font-size: 15px;
+    }
+    .dropdown a:hover {
+      background: #ffecec;
+      color: #b22222;
+    }
+    .show { display: block; }
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 32px 48px;
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+      z-index: 9999;
+      text-align: center;
+      border: 2px solid #b22222;
+    }
+    .modal.success { border-color: #4BB543; }
+    .modal.error { border-color: #b22222; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+    <h1>HemoGlow – Manage Requests</h1>
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="org_profile.html">Org Profile</a>
+        <a href="manage_requests.html">Manage Requests</a>
+        <a href="inventory.html">Blood Inventory</a>
+        <a href="org_events.html">Events</a>
+        <a href="login_organisation.html" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+  <div class="container">
+    <h2>Pending Requests</h2>
+    <table id="requestsTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Patient Name</th>
+          <th>Blood Type</th>
+          <th>Hospital</th>
+          <th>Contact</th>
+          <th>Amount (L)</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="requestsBody">
+        <tr><td colspan="8" class="empty">No requests available.</td></tr>
+      </tbody>
+    </table>
+    <div id="statusMsg" style="margin-top:18px;color:#b22222;font-weight:bold;"></div>
+  </div>
+  <script>
+    function showModal(message, isSuccess = true) {
+      let modal = document.getElementById('feedbackModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'feedbackModal';
+        modal.className = 'modal ' + (isSuccess ? 'success' : 'error');
+        modal.innerHTML = `<span id='modalMsg'></span><br><button onclick='document.getElementById("feedbackModal").remove()' style='margin-top:18px;padding:8px 22px;border:none;background:#b22222;color:#fff;border-radius:6px;cursor:pointer;'>OK</button>`;
+        document.body.appendChild(modal);
+      }
+      modal.className = 'modal ' + (isSuccess ? 'success' : 'error');
+      document.getElementById('modalMsg').innerText = message;
+    }
+    function toggleDropdown() {
+      document.getElementById("dropdownMenu").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-btn')) {
+        document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+      }
+    }
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userid');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      window.location.href = 'login_organisation.html';
+    }
+    const tbody = document.getElementById("requestsBody");
+    let requests = [];
+    const orgId = localStorage.getItem('organizationId'); // Use organization ID instead of user ID
+    const token = localStorage.getItem('token');
+    async function fetchRequests() {
+      if (!orgId || !token) {
+        window.location.href = 'login_organisation.html';
+        return;
+      }
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${orgId}/requests`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          let data = await res.json();
+          if (Array.isArray(data)) {
+            requests = data;
+          } else if (data && Array.isArray(data.requests)) {
+            requests = data.requests;
+          } else {
+            requests = [];
+          }
+        } else {
+          requests = [];
+        }
+      } catch (err) {
+        requests = [];
+      }
+      renderRequests();
+    }
+    function renderRequests() {
+      tbody.innerHTML = "";
+      if (!requests || requests.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No requests available.</td></tr>`;
+        return;
+      }
+      requests.forEach((r, i) => {
+        const tr = document.createElement("tr");
+        let statusHtml = "";
+        if (r.status === "ACCEPTED") {
+          statusHtml = `<span style='color:green;font-weight:bold;'>Accepted</span>`;
+        } else if (r.status === "REJECTED") {
+          statusHtml = `<span style='color:#b22222;font-weight:bold;'>Rejected</span>`;
+        } else {
+          statusHtml = `<span style='color:#64748b;font-weight:bold;'>Pending</span>`;
+        }
+        let actionHtml = "";
+        if (r.status === "ACCEPTED") {
+          actionHtml = `<span style='color:green;font-size:1.5em;' title='Approved'>&#10004;</span>`;
+        } else if (r.status === "REJECTED") {
+          actionHtml = `<span style='color:#b22222;font-size:1.5em;' title='Rejected'>&#10008;</span>`;
+        } else {
+          actionHtml = `<button class="btn approve" onclick="approveRequest(${r.id})">Approve</button> <button class="btn reject" onclick="rejectRequest(${r.id})">Reject</button>`;
+        }
+        tr.innerHTML = `
+          <td>${i + 1}</td>
+          <td>${r.patient}</td>
+          <td>${r.bloodGroup}</td>
+          <td>${r.hospital}</td>
+          <td>${r.phone}</td>
+          <td>${r.amount ? r.amount : '-'} L</td>
+          <td>${statusHtml}</td>
+          <td>${actionHtml}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    async function approveRequest(requestId) {
+      if (!orgId || !token) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${orgId}/requests/${requestId}/accept`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          showModal('Request approved!', true);
+          await fetchRequests();
+        } else {
+          const errorText = await res.text();
+          showModal('Failed to approve request: ' + errorText, false);
+        }
+      } catch (err) {
+        showModal('Error approving request', false);
+      }
+    }
+    async function rejectRequest(requestId) {
+      if (!orgId || !token) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/org/${orgId}/requests/${requestId}/reject`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          showModal('Request rejected!', true);
+          await fetchRequests();
+        } else {
+          const errorText = await res.text();
+          showModal('Failed to reject request: ' + errorText, false);
+        }
+      } catch (err) {
+        showModal('Error rejecting request', false);
+      }
+    }
+    fetchRequests();
+  </script>
+</body>
+</html>

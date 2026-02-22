@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood Donation</title>
+  <style>
+   /* Other styles remain the same */
+body {font-family: Arial, sans-serif;margin: 0;padding: 0;background-color: #ffe6e6;color: #333;text-align: center;}
+.main-section {margin: 40px 0;}
+select {padding: 10px 15px;font-size: 16px;border-radius: 5px;border: 1px solid #ccc;cursor: pointer;}
+.facts {width: 60%;margin: 20px auto;text-align: left;}
+details {background: #fff;border-radius: 8px;margin: 10px 0;padding: 10px 15px;box-shadow: 0 3px 8px rgba(0,0,0,0.1);cursor: pointer;}
+summary {font-size: 18px;font-weight: bold;color: #b71c1c;outline: none;}
+ul {margin-top: 10px;margin-left: 20px;list-style-type: disc;line-height: 1.6;}
+
+/* New and updated styles for the header */
+header {
+    background-color: #b71c1c;
+    color: white;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    border-radius: 0 0 10px 10px;
+    display: flex; /* Makes the content arrange in a row */
+    align-items: center; /* Vertically centers the items */
+    justify-content: center; /* Horizontally centers the items */
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    text-decoration: none; /* Can be removed */
+    color: white; /* Can be removed */
+}
+
+.logo-container img {
+    width: 60px; /* Adjust size as needed */
+    height: 60px;
+    border-radius: 50%; /* The key to making it a circle */
+    object-fit: cover; /* Ensures the image fills the space correctly */
+    margin-right: 15px; /* Adds space between the logo and text */
+    border: 2px solid white; /* Adds a white border to make the logo pop */
+}
+
+  </style>
+</head>
+<body>
+  <header>
+  <div class="logo-container">
+    <img src="logo.jpg" alt="HemoGlow Logo">
+    <span>HemoGlow - Bleed for a Cause!</span>
+  </div>
+</header>
+  
+  <div class="main-section">
+    <h2>Select your role</h2>
+    <select name="role" id="roleSelect" required>
+      <option value="" disabled selected hidden>Select role</option>
+      <option value="USER">User</option>
+      <option value="ORGANISATION">Organisation</option>
+    </select>
+  </div>
+  <div class="facts">
+    <details><summary>
+Some Interesting Facts:
+</summary>
+      <ul><li>World Blood Donor Day is celebrated on June 14th. This day honors Karl Landsteiner, the scientist who discovered the ABO blood group system. It's a day to thank volunteer blood donors for their life-saving gifts.</li><li>Donating blood is a mini health check-up. Before you donate, you receive a free mini-physical that checks your pulse, blood pressure, temperature, and iron levels. This can sometimes alert donors to potential health issues they were unaware of.</li><li>A single donation can save up to three lives. After a whole blood donation is collected, it is separated into its components: red blood cells, plasma, and platelets. Each of these components can be used to treat different patients with specific needs.</li></ul>
+    </details>
+    <details><summary>Why is blood donation important?</summary>
+      <ul><li>Emergency and Trauma: Blood transfusions are a lifeline for victims of accidents, natural disasters, and traumatic injuries who have experienced significant blood loss :</li><li>Cancer Treatment: Many cancer patients, particularly those undergoing chemotherapy or radiation therapy, require regular blood transfusions to replenish red blood cells and platelets that are destroyed by treatment</li><li>Supports Healthcare – Regular donations ensure hospitals are ready for emergencies and ongoing treatments</li></ul>
+    </details>
+  </div>
+  <script>
+    document.getElementById('roleSelect').addEventListener('change', function() {
+      if(this.value === "USER"){window.location.href = "login_with_register.html";}
+      else if(this.value === "ORGANISATION"){window.location.href = "login_organisation.html";}
+    });
+  </script>
+</body>
+</html>

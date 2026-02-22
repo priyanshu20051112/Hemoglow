@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Blood Request - HemoGlow</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #fff5f5;
+      margin: 0;
+    }
+    header {
+      background: #b22222;
+      color: white;
+      padding: 18px 36px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(178,34,34,0.08);
+    }
+    .logo {
+      height: 44px;
+      margin-right: 18px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 1px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 36px auto;
+      padding: 28px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    h2 {
+      color: #b22222;
+      margin-bottom: 24px;
+      font-size: 22px;
+    }
+    .search-section {
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    select, input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-right: 8px;
+      font-size: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      padding: 13px;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+    }
+    th {
+      background: #ffecec;
+      color: #b22222;
+      font-size: 16px;
+    }
+    .request-btn {
+      background: #b22222;
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    .request-btn:hover {
+      background: #a11f1f;
+    }
+    .profile {
+      position: absolute;
+      top: 18px;
+      right: 36px;
+    }
+    .profile-btn {
+      background: white;
+      color: #b22222;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(178,34,34,0.08);
+    }
+    .profile-btn:hover {
+      background: #ffecec;
+    }
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      margin-top: 10px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      min-width: 170px;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 12px 18px;
+      color: #1e293b;
+      text-decoration: none;
+      font-size: 15px;
+    }
+    .dropdown a:hover {
+      background: #ffecec;
+      color: #b22222;
+    }
+    .show {
+      display: block;
+    }
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      padding: 32px 48px;
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+      z-index: 9999;
+      text-align: center;
+      border: 2px solid #b22222;
+    }
+    .modal.success {
+      border-color: #4BB543;
+    }
+    .modal.error {
+      border-color: #b22222;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo" />
+    <h1>HemoGlow – Blood Request</h1>
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="home.html">Home</a>
+        <a href="profile.html">Profile</a>
+        <a href="request.html">Request Blood</a>
+        <a href="event.html">Events</a>
+        <a href="login_with_register.html" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </header>
+  <div class="container">
+    <h2>Find Blood & Request</h2>
+    <div class="search-section">
+      <label for="searchBlood">Select Blood Type:</label>
+      <select id="searchBlood">
+        <option value="">--Select--</option>
+        <option value="A+">A+</option>
+        <option value="A-">A-</option>
+        <option value="B+">B+</option>
+        <option value="B-">B-</option>
+        <option value="O+">O+</option>
+        <option value="O-">O-</option>
+        <option value="AB+">AB+</option>
+        <option value="AB-">AB-</option>
+      </select>
+      <button id="searchBtn" class="request-btn">Search</button>
+    </div>
+    <table id="orgTable">
+      <tr>
+        <th>Organization</th>
+        <th>Blood Type</th>
+        <th>Available (L)</th>
+        <th>Action</th>
+      </tr>
+    </table>
+  </div>
+  <script>
+    const orgTable = document.getElementById("orgTable");
+    function showModal(message, isSuccess = true) {
+      let modal = document.getElementById('feedbackModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'feedbackModal';
+        modal.className = 'modal ' + (isSuccess ? 'success' : 'error');
+        modal.innerHTML = `<span id='modalMsg'></span><br><button onclick='document.getElementById("feedbackModal").remove()' style='margin-top:18px;padding:8px 22px;border:none;background:#b22222;color:#fff;border-radius:6px;cursor:pointer;'>OK</button>`;
+        document.body.appendChild(modal);
+      }
+      modal.className = 'modal ' + (isSuccess ? 'success' : 'error');
+      document.getElementById('modalMsg').innerText = message;
+    }
+    document.getElementById("searchBtn").addEventListener("click", async () => {
+      const bloodType = document.getElementById("searchBlood").value;
+      if (!bloodType) return;
+      try {
+        const res = await fetch(`http://localhost:8080/api/inventory/public?bloodGroup=${encodeURIComponent(bloodType)}`);
+        if (!res.ok) throw new Error("Failed to fetch inventory");
+        const orgs = await res.json();
+        renderOrgTable(orgs, bloodType);
+      } catch (err) {
+        showModal("Error fetching organizations", false);
+      }
+    });
+    function renderOrgTable(orgs, bloodType) {
+      orgTable.querySelectorAll("tr:not(:first-child)").forEach((r) => r.remove());
+      if (!orgs || orgs.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan='4' style='color:gray;'>No organizations found with ${bloodType} available.</td>`;
+        orgTable.appendChild(row);
+        return;
+      }
+        orgs.forEach((org) => {
+          // Use org.orgId (User ID from PublicInventoryDTO) for requests  
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${org.orgName || org.name}</td>
+            <td>${org.bloodGroup}</td>
+            <td>${org.liters || org.bloodLiters}</td>
+            <td><button class='request-btn' onclick='requestBlood(${org.orgId}, "${org.bloodGroup}")'>Request</button></td>
+          `;
+          orgTable.appendChild(row);
+        });
+    }
+    window.requestBlood = async function (orgId, bloodGroup) {
+      const patient = localStorage.getItem("username") || prompt("Enter patient name:");
+      const phone = prompt("Enter contact phone number:");
+      const hospital = prompt("Enter hospital name:");
+      const amount = prompt("Enter amount of blood required (in liters):");
+      const userId = localStorage.getItem("userid");
+      if (!patient || !phone || !hospital || !amount || !userId) {
+        showModal("All fields required!", false);
+        return;
+      }
+      if (isNaN(amount) || Number(amount) <= 0) {
+        showModal("Please enter a valid amount.", false);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `http://localhost:8080/api/user/${userId}/requests`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ patient, bloodGroup, hospital, phone, amount: Number(amount), organization: { id: orgId } }),
+          }
+        );
+        if (res.ok) {
+          showModal("Request sent successfully!", true);
+        } else {
+          const errorText = await res.text();
+          showModal("Failed to send request: " + errorText, false);
+        }
+      } catch (err) {
+        showModal("Error sending request", false);
+      }
+    };
+    function toggleDropdown() {
+      document.getElementById("dropdownMenu").classList.toggle("show");
+    }
+    window.onclick = function (event) {
+      if (!event.target.matches(".profile-btn")) {
+        document.querySelectorAll(".dropdown").forEach((d) => d.classList.remove("show"));
+      }
+    };
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userid");
+      localStorage.removeItem("username");
+      localStorage.removeItem("role");
+    }
+  </script>
+</body>
+</html>

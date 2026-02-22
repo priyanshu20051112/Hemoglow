@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood Donation Platform - Organization Home</title>
+  <style>
+    :root {
+      --primary: #B22222;
+      --dark: #1e293b;
+      --muted: #64748b;
+      --bg: #fff5f5;
+    }
+    * {margin:0; padding:0; box-sizing:border-box;}
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 20px 40px;
+      position: relative;
+      display: flex; 
+      align-items: center; 
+      gap: 15px; 
+    }
+    header .logo {
+      height: 50px; 
+    }
+    header h1 {
+      font-size: 26px;
+    }
+    .profile {
+      position: absolute;
+      top: 20px;
+      right: 40px;
+    }
+    .profile-btn {
+      background: white;
+      color: var(--primary);
+      border: none;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .profile-btn:hover { background: #ffecec; }
+    .dropdown {
+      display: none;
+      position: absolute;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      min-width: 180px;
+      z-index: 100;
+    }
+    .dropdown a {
+      display: block;
+      padding: 10px 15px;
+      color: var(--dark);
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .dropdown a:hover {
+      background: #ffecec;
+      color: var(--primary);
+    }
+    .show { display: block; }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: linear-gradient(to right, #b22222, #ff4d4d);
+      color: white;
+    }
+    .hero h2 {
+      font-size: 34px;
+      margin-bottom: 15px;
+    }
+    .hero p {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .hero button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      background: white;
+      color: var(--primary);
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .hero button:hover { background: #ffecec; }
+
+    .features {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    .feature-card:hover { transform: translateY(-5px); }
+    .feature-card img {
+      width: 70px;
+      margin-bottom: 12px;
+    }
+    .feature-card h3 { color: var(--primary); margin-bottom: 8px; }
+
+    .about {
+      background: white;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    .about h2 { color: var(--primary); margin-bottom: 15px; }
+    .about p { max-width: 700px; margin: 0 auto; color: var(--muted); }
+
+    footer {
+      text-align: center;
+      padding: 15px;
+      background: var(--dark);
+      color: white;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+    <h1>HemoGlow – Organization Portal</h1>
+
+    <div class="profile">
+      <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+      <div id="dropdownMenu" class="dropdown">
+        <a href="org_profile.html">Profile</a>
+        <a href="manage_requests.html">Manage Requests</a>
+        <a href="inventory.html">Blood Inventory</a>
+        <a href="org_events.html">Events</a>
+        <a href="#">About Us</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div id="orgInfo">
+      <h2>Loading organization info...</h2>
+    </div>
+    <button onclick="location.href='org_events.html'" style="margin-top: 20px; padding: 14px 28px; font-size: 16px; background: white; color: var(--primary); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;">
+      🎪 Conduct Event
+    </button>
+  </section>
+
+  <section class="features">
+    <div class="feature-card">
+      <img src="https://cdn-icons-png.flaticon.com/128/12630/12630697.png" alt="Requests Icon">
+      <h3>Manage Requests</h3>
+      <p>Approve, reject, or assign donor requests directly from your portal.</p>
+    </div>
+    <div class="feature-card">
+      <img src="https://cdn-icons-png.flaticon.com/128/2966/2966485.png" alt="Inventory Icon">
+      <h3>Blood Inventory</h3>
+      <p>Monitor blood stock levels across different blood types in real-time.</p>
+    </div>
+    <div class="feature-card" onclick="location.href='org_events.html'" style="cursor: pointer;">
+      <img src="https://cdn-icons-png.flaticon.com/128/9559/9559163.png" alt="Camp Icon">
+      <h3>Organize Camps</h3>
+      <p>Schedule blood donation drives and engage with the community.</p>
+    </div>
+    <div class="feature-card">
+      <img src="https://cdn-icons-png.flaticon.com/128/18115/18115615.png" alt="Analytics Icon">
+      <h3>Analytics</h3>
+      <p>Get insights into donations, requests, and community engagement.</p>
+    </div>
+  </section>
+
+  <section class="about">
+    <h2>About HemoGlow for Organizations</h2>
+    <p>Our platform empowers hospitals, NGOs, and blood banks to efficiently manage blood donation requests and supplies, organize events, and collaborate with donors for life-saving impact.</p>
+  </section>
+
+  <footer>
+    © 2025 HemoGlow — Empowering Organizations to Save Lives
+  </footer>
+
+  <script>
+    function toggleDropdown() {
+      document.getElementById("dropdownMenu").classList.toggle("show");
+    }
+    window.onclick = function(event) {
+      if (!event.target.matches('.profile-btn')) {
+        const dropdowns = document.getElementsByClassName("dropdown");
+        for (let i = 0; i < dropdowns.length; i++) {
+          if (dropdowns[i].classList.contains('show')) {
+            dropdowns[i].classList.remove('show');
+          }
+        }
+      }
+    }
+
+    // --- Auth guard & helpers (use JWT stored in localStorage.token) ---
+    const token = localStorage.getItem('token');
+    // orgId is actually userId for organization actions
+    const orgId = localStorage.getItem('userid');
+    if (!token || !orgId) {
+      window.location.href = 'login_organisation.html';
+    } else {
+      // show org name in header if present
+      const orgNameFromStorage = localStorage.getItem('username');
+      if (orgNameFromStorage) {
+        const h = document.createElement('div');
+        h.style.position = 'absolute';
+        h.style.right = '180px';
+        h.style.top = '22px';
+        h.style.color = 'white';
+        h.style.fontWeight = '600';
+        h.innerText = orgNameFromStorage;
+        document.querySelector('header').appendChild(h);
+      }
+      // Fetch org info from backend
+      fetchOrgInfo();
+    }
+
+    async function fetchOrgInfo() {
+      const infoDiv = document.getElementById('orgInfo');
+      try {
+  // Use user dashboard endpoint for organization user info
+  const res = await fetch(`http://localhost:8080/api/user/dashboard/${orgId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (res.ok) {
+          const org = await res.json();
+          // Fetch events for count
+          // API expects userId for organization actions
+          const eventsRes = await fetch(`http://localhost:8080/api/org/${orgId}/events`, {
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          let eventCount = 0;
+          if (eventsRes.ok) {
+            const events = await eventsRes.json();
+            eventCount = events.length;
+          }
+          infoDiv.innerHTML = `
+            <h2>Welcome, ${org.username || org.name}</h2>
+            <p><b>Email:</b> ${org.email || 'Not provided'}</p>
+            <p><b>Role:</b> ${org.userRole || 'Organization'}</p>
+            <p><b>Events Organized:</b> ${eventCount}</p>
+          `;
+        } else {
+          infoDiv.innerHTML = '<h2>Failed to load organization info.</h2>';
+        }
+      } catch (err) {
+        infoDiv.innerHTML = '<h2>Error loading organization info.</h2>';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userid');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      localStorage.removeItem('orgProfile');
+      window.location.href = 'login_organisation.html';
+    }
+  </script>
+</body>
+</html>

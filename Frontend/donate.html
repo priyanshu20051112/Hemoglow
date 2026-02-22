@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Centers</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+             background: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), url('https://i.pinimg.com/1200x/53/38/b1/5338b18e66d8f23d721ed157dbcea6db.jpg') no-repeat center center fixed;
+             background-size:26cm;
+        }
+        header {
+            background: #B22222;
+            color: white;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+        }
+        .logo {
+            height: 50px;
+            margin-right: 15px;
+        }
+        .profile {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+        }
+        .profile-btn {
+            background: white;
+            color: #B22222;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            min-width: 160px;
+            z-index: 100;
+        }
+        .dropdown a {
+            display: block;
+            padding: 10px 15px;
+            color: #333;
+            text-decoration: none;
+        }
+        .dropdown a:hover {
+            background: #ffecec;
+            color: #B22222;
+        }
+        .show {
+            display: block;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .center-card {
+            background: #ffecec;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            background: #B22222;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #8b1a1a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="logo.jpg" alt="HemoGlow Logo" class="logo">
+            HemoGlow – Donation
+        </div>
+        <div class="profile">
+            <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+            <div id="dropdownMenu" class="dropdown">
+                <a href="home.html">Home</a>
+                <a href="profile.html">Profile</a>
+                <a href="donate.html">Donation</a>
+                <a href="request.html">Requests</a>
+                <a href="event.html">Events</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container" id="centersList">Loading centers...</div>
+
+     <script>
+        function toggleDropdown() {
+            document.getElementById("dropdownMenu").classList.toggle("show");
+        }
+        window.onclick = function(e) {
+            if (!e.target.matches('.profile-btn')) {
+                document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+            }
+        }
+
+        const centersList = document.getElementById("centersList");
+        const userId = localStorage.getItem("userid");
+        const username = localStorage.getItem("username");
+        const password = localStorage.getItem("password");
+
+        if (!userId) {
+            alert("Please login first.");
+            window.location.href = "home.html";
+        }
+
+        async function loadCenters() {
+            try {
+             
+                const res = await fetch("http://localhost:8080/api/organization/open-for-donation", {
+                    headers: {
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch: ${res.statusText}`);
+                }
+
+                const centers = await res.json();
+                renderCenters(centers);
+
+            } catch (err) {
+                console.error("Error fetching centers:", err);
+                centersList.innerHTML = "<p>Failed to load donation centers. Please try again later.</p>";
+            }
+        }
+
+        function renderCenters(centers) {
+            centersList.innerHTML = ""; 
+            if (centers.length === 0) {
+                centersList.innerHTML = "<p>No donation centers are currently open.</p>";
+                return;
+            }
+
+            centers.forEach(c => {
+                const card = document.createElement("div");
+                card.classList.add("center-card");
+                card.innerHTML = `
+                    <h3>${c.name}</h3>
+                    <p><b>Address:</b> ${c.address}</p>
+                    <p><b>Phone:</b> ${c.phone}</p>
+                    <button onclick="recordDonation(${c.id})">Donate Now</button>
+                `;
+                centersList.appendChild(card);
+            });
+        }
+
+        async function recordDonation(orgId) {
+            try {
+                const res = await fetch(`http://localhost:8080/api/user/${userId}/donations`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + localStorage.getItem("token")
+                    },
+                    body: JSON.stringify({ organizationId: orgId })
+                });
+
+                if (res.ok) {
+                    alert("✅ Donation recorded successfully! Thank you for your contribution.");
+        
+                    loadCenters();
+                } else {
+                    const errorText = await res.text();
+                    alert("Failed to record donation: " + errorText);
+                    console.error("Donation record failed:", errorText);
+                }
+            } catch (err) {
+                console.error("Error recording donation:", err);
+                alert("An error occurred while connecting to the server. Please try again.");
+            }
+        }
+        document.addEventListener("DOMContentLoaded", loadCenters);
+    </script>
+
+</body>
+</html>

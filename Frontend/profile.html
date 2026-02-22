@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile</title>
+<style>
+  body { margin:0; font-family: Arial, sans-serif; background:#fdfdfd; }
+  header { background:#B22222; color:white; padding:20px 40px; text-align:center; font-size:26px; font-weight:bold; position:relative; }
+  .profile { position:absolute; top:20px; right:40px; }
+  .profile-btn { background:white; color:#B22222; border:none; padding:8px 14px; border-radius:20px; cursor:pointer; font-weight:bold; }
+  .dropdown { display:none; position:absolute; right:0; margin-top:8px; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2); min-width:160px; z-index:100; }
+  .dropdown a { display:block; padding:10px 15px; text-decoration:none; color:#333; }
+  .dropdown a:hover { background:#ffecec; color:#B22222; }
+  .show { display:block; }
+  .container { max-width:900px; margin:30px auto; padding:20px; }
+  .profile-card { background:#fff; padding:30px; border-radius:15px; box-shadow:0 4px 12px rgba(0,0,0,0.1); text-align:center; }
+  .avatar { width:120px; height:120px; border-radius:50%; object-fit:cover; margin-bottom:15px; border:4px solid #B22222; }
+  h2 { margin:10px 0; color:#B22222; }
+  .stats { display:flex; justify-content:space-around; margin-top:25px; }
+  .stat-box { background:#ffecec; padding:20px; border-radius:10px; width:28%; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.1); }
+  .stat-box h3 { margin:5px 0; color:#B22222; }
+  .actions button { background:#B22222; color:white; border:none; padding:10px 16px; margin:5px; border-radius:8px; cursor:pointer; }
+  .actions button:hover { background:#8b1a1a; }
+  .edit-form { display:none; margin-top:20px; }
+  .edit-form input, .edit-form select { width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  HemoGlow – My Profile
+  <div class="profile">
+    <button class="profile-btn" onclick="toggleDropdown()">☰ Menu</button>
+    <div id="dropdownMenu" class="dropdown">
+      <a href="home.html">Home</a>
+      <a href="profile.html">Profile</a>
+      <a href="request.html">Requests</a>
+      <a href="event.html">Events</a>
+  <button onclick="logout()" style="background:none;border:none;color:#b22222;cursor:pointer;">Logout</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="profile-card">
+  <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" class="avatar" alt="User Avatar">
+    <h2 id="profileName">Demo User</h2>
+    <p><b>Email:</b> <span id="profileEmail">user@example.com</span></p>
+    <p><b>Role:</b> <span id="profileRole">User</span></p>
+
+    <div class="stats">
+      <div class="stat-box"><h3 id="requestsPosted">0</h3><p>Blood Requests</p></div>
+      <div class="stat-box"><h3 id="eventsJoined">0</h3><p>Events Joined</p></div>
+    </div>
+
+    <div class="actions">
+      <button onclick="showEditForm()">Edit Profile</button>
+      <button onclick="logout()">Logout</button>
+    </div>
+
+    <form class="edit-form" id="editForm">
+      <input type="text" id="editName" required>
+      <input type="email" id="editEmail" required>
+      <select id="editRole"><option>User</option><option>Organisation</option></select>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleDropdown() {
+  document.getElementById("dropdownMenu").classList.toggle("show");
+}
+window.onclick = function(e) {
+  if(!e.target.matches('.profile-btn')) document.querySelectorAll(".dropdown").forEach(d=>d.classList.remove("show"));
+}
+
+// Elements
+const profileName = document.getElementById("profileName");
+const profileEmail = document.getElementById("profileEmail");
+const profileRole = document.getElementById("profileRole");
+const editForm = document.getElementById("editForm");
+const editName = document.getElementById("editName");
+const editEmail = document.getElementById("editEmail");
+const editRole = document.getElementById("editRole");
+
+// Get logged-in user info from localStorage
+const userId = localStorage.getItem("userid");
+const username = localStorage.getItem("username");
+if(!userId || !username) { window.location.href="login.html"; }
+
+// ✅ Load Profile with Authorization header
+async function loadProfile() {
+  try {
+    const token = localStorage.getItem("token");   // 👈 use JWT token instead
+    const res = await fetch(`http://localhost:8080/api/user/dashboard/${userId}`, {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+    if(res.ok){
+      const data = await res.json();
+      profileName.textContent = data.username;
+      profileEmail.textContent = data.email || "";
+      profileRole.textContent = data.userRole || "User";
+    } else {
+      alert("Failed to fetch profile");
+    }
+  } catch(err){
+    console.error(err);
+    alert("Cannot fetch profile. Backend might be down.");
+  }
+}
+
+// ✅ Load stats also with Authorization
+async function loadStats() {
+  try {
+    const token = localStorage.getItem("token");
+    const [reqRes, evtRes] = await Promise.all([
+      fetch(`http://localhost:8080/api/user/${userId}/requests`, { headers: { "Authorization": "Bearer " + token } }),
+      fetch(`http://localhost:8080/api/user/${userId}/events`, { headers: { "Authorization": "Bearer " + token } })
+    ]);
+
+    const requests = await reqRes.json();
+    const events = await evtRes.json();
+
+    document.getElementById("requestsPosted").textContent = requests.length;
+    document.getElementById("eventsJoined").textContent = events.length;
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+// Show edit form
+function showEditForm() {
+  editName.value = profileName.textContent;
+  editEmail.value = profileEmail.textContent;
+  editRole.value = profileRole.textContent;
+  editForm.style.display = "block";
+}
+
+// ✅ Update profile with Authorization
+editForm.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const updatedData = {
+    username: editName.value.trim(),
+    email: editEmail.value.trim(),
+    userRole: editRole.value
+  };
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:8080/api/user/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type":"application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify(updatedData)
+    });
+    if(res.ok){
+      const data = await res.json();
+      profileName.textContent = data.username;
+      profileEmail.textContent = data.email || "";
+      profileRole.textContent = data.userRole || "User";
+      editForm.style.display = "none";
+      alert("Profile updated successfully!");
+    } else { alert("Failed to update profile"); }
+  } catch(err){
+    console.error(err);
+    alert("Error connecting to backend");
+  }
+});
+
+function logout() {
+  localStorage.clear();
+  window.location.href="login_with_register.html";
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadProfile();
+  loadStats();
+});
+</script>
+
+</body>
+</html>
+
